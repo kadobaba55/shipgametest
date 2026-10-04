@@ -21,11 +21,12 @@ function createWorld(){
   }
   function join(pid,nick){if(ships.size>=8||!cleanNick(nick))return false;ships.set(pid,spawn(pid,cleanNick(nick)));return true}
   function leave(pid){ships.delete(pid);inputs.delete(pid)}
-  function fire(s,a,salvo){
+  function fire(s,a,salvo,range){
     if(s.dead||!Number.isFinite(a))return;
     a=wrap(a);const d=wrap(a-s.a);if(Math.abs(d)<Math.PI/4||Math.abs(d)>Math.PI*.75)return;
+    range=Number.isFinite(range)?Math.max(80,Math.min(cfg.range,range)):cfg.range;
     const side=d>0?'r':'l';if(s[side]>0)return;s[side]=cfg.reload;
-    for(let i=-1;i<=1;i++){const q=a+i*.055;shots.push({id:++nextShot,x:s.x+Math.cos(q)*26,y:s.y+Math.sin(q)*26,dx:Math.cos(q),dy:Math.sin(q),travel:0,owner:s.pid,salvo:Number.isSafeInteger(salvo)?salvo:undefined})}
+    for(let i=-1;i<=1;i++){const q=a+i*.055;shots.push({id:++nextShot,x:s.x+Math.cos(q)*26,y:s.y+Math.sin(q)*26,dx:Math.cos(q),dy:Math.sin(q),travel:0,range:range-26,owner:s.pid,salvo:Number.isSafeInteger(salvo)?salvo:undefined})}
     fx.push({x:s.x+Math.cos(a)*28,y:s.y+Math.sin(a)*28,life:.22,max:.22,type:'flash',owner:s.pid});return true;
   }
   function message(pid,m,now=Date.now()){
@@ -33,7 +34,7 @@ function createWorld(){
     const q=inputs.get(pid)||{x:0,y:0,at:now,lastAction:0};q.at=now;inputs.set(pid,q);
     if(m.type==='input'&&Number.isFinite(m.x)&&Number.isFinite(m.y)){q.x=Math.max(-1,Math.min(1,m.x));q.y=Math.max(-1,Math.min(1,m.y))}
     if(m.type!=='action'||s.dead||now-q.lastAction<80)return;q.lastAction=now;
-    if(m.action==='fire')return fire(s,m.a,m.salvo);
+    if(m.action==='fire')return fire(s,m.a,m.salvo,m.range);
     if(m.action==='boost'&&!s.bc){s.boost=3;s.bc=20}
     if(m.action==='heal'&&!s.hc){s.heal=5;s.hc=45}
   }
@@ -51,9 +52,9 @@ function createWorld(){
       for(const i of islands){const dx=s.x-i.x,dy=s.y-i.y,d=Math.hypot(dx,dy),r=i.r+18;if(d<r){s.x=i.x+(dx/(d||1))*r;s.y=i.y+(dy/(d||1))*r;s.v*=.75}}
     }
     for(let j=shots.length-1;j>=0;j--){
-      const b=shots[j],distance=cfg.bullet*dt,ox=b.x,oy=b.y;b.x+=b.dx*distance;b.y+=b.dy*distance;b.travel+=distance;
+      const b=shots[j],distance=Math.min(cfg.bullet*dt,Math.max(0,b.range-b.travel)),ox=b.x,oy=b.y;b.x+=b.dx*distance;b.y+=b.dy*distance;b.travel+=distance;
       const near=(x,y,r)=>{const dx=b.x-ox,dy=b.y-oy,u=Math.max(0,Math.min(1,((x-ox)*dx+(y-oy)*dy)/(dx*dx+dy*dy||1)));return Math.hypot(x-ox-u*dx,y-oy-u*dy)<r};
-      let remove=b.travel>=cfg.range;
+      let remove=b.travel>=b.range;
       if(islands.some(i=>near(i.x,i.y,i.r)))remove=true;
       else{const target=[...ships.values()].find(s=>s.pid!==b.owner&&!s.dead&&near(s.x,s.y,24));if(target){target.hp=Math.max(0,target.hp-100);target.heal=0;fx.push({x:target.x,y:target.y,life:.5,max:.5,type:'hit'});if(!target.hp){target.dead=2;fx.push({x:target.x,y:target.y,life:1.5,max:1.5,type:'sink'})}remove=true}}
       if(remove){fx.push({x:b.x,y:b.y,life:.4,max:.4,type:'splash'});shots.splice(j,1)}

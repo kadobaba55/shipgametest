@@ -39,11 +39,11 @@ Repo kökünde `render.yaml` hazırdır. Render'da bu repodan **Web Service** ol
 
 Yayınlanan Render adresi oyunu ve sunucuyu birlikte açar. Sunucu yayımlandıktan sonra GitHub Pages'i de kullanmak için `network-config.js` içindeki boş adresi `wss://YAYINLANAN-ADRES/ws` ile değiştir.
 
-Ücretsiz Render sunucusu boşta kaldığında uyur; ilk açılış zaman alabilir. Kalıcı üretim sunucusu değildir. Henüz bir Render hesabına bağlanıp bulutta yayımlanmadı.
+Ücretsiz Render sunucusu boşta kaldığında uyur; ilk açılış zaman alabilir. Kalıcı üretim sunucusu değildir. Render sunucusu: https://shipgametest.onrender.com/ . GitHub Pages aynı sunucuya bağlanır.
 
 ## GitHub Pages sürümü
 
-`network-config.js` adresi boşken mevcut PeerJS bağlantısı kullanılır: ilk oyuncunun cihazı dünyayı yönetir. Host ayrılırsa bağlantı kesilir. Bu modun ikinci bulut tarayıcısıyla bağlantı testi zaman aşımına uğradı; farklı ağlarda çalıştığı doğrulanmadı. Sunuculu sürümün yerine güvenilir kabul edilmemelidir.
+`network-config.js` yayımlanan WebSocket sunucusunu kullanır. Adres bilerek boş bırakılırsa eski PeerJS bağlantısı kullanılır: ilk oyuncunun cihazı dünyayı yönetir. Host ayrılırsa bağlantı kesilir. Bu modun ikinci bulut tarayıcısıyla bağlantı testi zaman aşımına uğradı; farklı ağlarda çalıştığı doğrulanmadı. Sunuculu sürümün yerine güvenilir kabul edilmemelidir.
 
 ## Doğrulama
 

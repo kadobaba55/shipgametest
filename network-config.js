@@ -1,3 +1,2 @@
-// Set this to the deployed server's wss:// address for GitHub Pages.
-// The Node server serves its own configuration automatically.
-window.NAVAL_SERVER_URL = '';
+// Fixed shared server endpoint. Players cannot change gameplay settings.
+window.NAVAL_SERVER_URL = 'wss://shipgametest.onrender.com/ws';

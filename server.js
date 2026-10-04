@@ -21,19 +21,19 @@ function createWorld(){
   }
   function join(pid,nick){if(ships.size>=8||!cleanNick(nick))return false;ships.set(pid,spawn(pid,cleanNick(nick)));return true}
   function leave(pid){ships.delete(pid);inputs.delete(pid)}
-  function fire(s,a){
+  function fire(s,a,salvo){
     if(s.dead||!Number.isFinite(a))return;
     a=wrap(a);const d=wrap(a-s.a);if(Math.abs(d)<Math.PI/4||Math.abs(d)>Math.PI*.75)return;
     const side=d>0?'r':'l';if(s[side]>0)return;s[side]=cfg.reload;
-    for(let i=-1;i<=1;i++){const q=a+i*.055;shots.push({id:++nextShot,x:s.x+Math.cos(q)*26,y:s.y+Math.sin(q)*26,dx:Math.cos(q),dy:Math.sin(q),travel:0,owner:s.pid})}
-    fx.push({x:s.x+Math.cos(a)*28,y:s.y+Math.sin(a)*28,life:.22,max:.22,type:'flash'});
+    for(let i=-1;i<=1;i++){const q=a+i*.055;shots.push({id:++nextShot,x:s.x+Math.cos(q)*26,y:s.y+Math.sin(q)*26,dx:Math.cos(q),dy:Math.sin(q),travel:0,owner:s.pid,salvo:Number.isSafeInteger(salvo)?salvo:undefined})}
+    fx.push({x:s.x+Math.cos(a)*28,y:s.y+Math.sin(a)*28,life:.22,max:.22,type:'flash',owner:s.pid});return true;
   }
   function message(pid,m,now=Date.now()){
     const s=ships.get(pid);if(!s||!m||typeof m!=='object')return;
     const q=inputs.get(pid)||{x:0,y:0,at:now,lastAction:0};q.at=now;inputs.set(pid,q);
     if(m.type==='input'&&Number.isFinite(m.x)&&Number.isFinite(m.y)){q.x=Math.max(-1,Math.min(1,m.x));q.y=Math.max(-1,Math.min(1,m.y))}
     if(m.type!=='action'||s.dead||now-q.lastAction<80)return;q.lastAction=now;
-    if(m.action==='fire')fire(s,m.a);
+    if(m.action==='fire')return fire(s,m.a,m.salvo);
     if(m.action==='boost'&&!s.bc){s.boost=3;s.bc=20}
     if(m.action==='heal'&&!s.hc){s.heal=5;s.hc=45}
   }
@@ -84,7 +84,7 @@ function createGameServer(){
       if(!m||typeof m!=='object')return;
       if(!joined){if(m.type!=='hello'||m.version!==2||!cleanNick(m.nick)){ws.close(1008,'Invalid nickname');return}if(!world.join(pid,m.nick)){send(ws,{type:'full'});ws.close(1008,'Sea full');return}joined=true;clearTimeout(helloTimeout);clients.set(pid,ws);send(ws,{type:'welcome',pid});send(ws,world.snapshot());return}
       if(m.type==='ping'&&Number.isSafeInteger(m.id)){send(ws,{type:'pong',id:m.id});return}
-      world.message(pid,m,now);
+      const accepted=world.message(pid,m,now);if(m.type==='action'&&m.action==='fire'&&Number.isSafeInteger(m.salvo))send(ws,{type:'fireResult',salvo:m.salvo,accepted:accepted===true});
     });
     ws.on('error',()=>{});ws.on('close',()=>{clearTimeout(helloTimeout);clients.delete(pid);world.leave(pid)});
   });

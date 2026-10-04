@@ -1,0 +1,8 @@
+{
+  "name": "shipgametest",
+  "version": "0.3.0",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": { "start": "node server.js", "test": "node --test server.test.js" },
+  "dependencies": { "ws": "8.18.3" }
+}

@@ -1,13 +1,59 @@
-# Naval Lab — Ortak deniz prototipi v2
+# Açık Deniz — Online Demo
 
-Canlı: https://kadobaba55.github.io/shipgametest/
+Mobil yatay ekran için düşük poligon görünümlü deniz savaşı prototipi.
 
-Oyuncu nickini yazar ve tek ortak dünyaya otomatik bağlanır. Nickler gemilerin üzerinde gösterilir. İlk giren tarayıcı host olur; sonraki oyuncular rastgele güvenli konumda doğar. En fazla 8 oyuncu. Oda kodu ve hesap yok. İlk cihaz sekmesi açık ve ön planda kalmalı. Host kapanırsa dünya kapanır; oyuncular tekrar bağlanarak yeni dünya açabilir. Kalıcı sunucu/host devri yok.
+## Oyuncu akışı
 
-Host gemileri, mermileri, hasarı, yetenekleri, ölüm ve yeniden doğmayı hesaplar. Misafirler hareket girdisi ve ateş/yetenek isteklerini gönderir. 20 Hz durum aktarımı. Ön/arka atış kapalı, yanlar 90 derece, taraflar bağımsız dolar. 3x100 hasar, 1000 can. Batınca 2 saniye sonra rastgele güvenli noktada doğulur. Atış açısı dolguları kaldırıldı; sadece nişan çizgisi var.
+Nickini yaz → Denize açıl → aynı haritada rastgele doğ.
 
-PeerJS 1.5.5 HTML içine eklenmiştir (MIT; PEERJS-LICENSE.txt). WebRTC veri bağlantıları ve ücretsiz PeerJS Cloud sinyalleşmesi kullanılır. PeerJS TURN ve Open Relay TCP/TLS 443 aktarım desteği eklendi; servis erişimi/kotası ve ağ kısıtları bağlantıyı etkileyebilir. İlk testte aynı Wi-Fi önerilir. Kamera/mikrofon izni kullanılmaz. Bu sistem prototiptir; kalıcı MMO sunucusu, güvenilir host, hile koruması ve oyuncu verisi yoktur.
+- Oda kodu veya ayarlar menüsü yok.
+- Küçük nickler gemilerin üzerinde görünür.
+- Joystick ile sür; ateşe bas, yana hedefle, bırak.
+- Ön ve arka ateş kapalı; sağ/sol üçlü salvo ve ayrı dolum süreleri.
+- Hızlanma, hasarla kesilen onarım, ada engelleri, batma ve yeniden doğma.
+- Bir ortak denizde en fazla 8 oyuncu.
 
-Sol joystick hareket. Sağ ateş düğmesini basılı tut, hedef yönünde sürükle, bırak. Masaüstü WASD/yön tuşları; denizde fareyle bas, hedefle ve bırak. Hızlanma 3 sn / cooldown20 sn. Onarım 5 sn içinde yüzde15 / cooldown45 sn, hasar keser.
+## Sunuculu sürüm (önerilen)
 
-Oyuncuya ayar paneli veya bot seçeneği gösterilmez. Tüm denge değerleri sabittir. GitHub Pages main / root üzerinden otomatik yayınlanır. Çevrimdışı PWA, Unity 3D, klan ve ekonomi içermez.
+Node.js 22+ gerekir:
+
+```sh
+npm ci
+npm test
+npm start
+```
+
+Tarayıcıda `http://localhost:3000` açılır. Aynı Wi-Fi'deki telefon bilgisayarın yerel IP adresi ve 3000 portuyla bağlanabilir. İnternet üzerinden oyun için bu sunucu HTTPS/WSS sağlayan bir hizmette çalışmalıdır.
+
+Sunucu HTML'yi de sunar ve WebSocket adresini otomatik ayarlar. Oyuncuların hiçbirinin telefonu sunucu olmaz. Hareket, mermiler, hasar, cooldown ve doğma merkezi sunucuda hesaplanır. Dünya yalnızca bellektedir; yeniden başlatmada sıfırlanır. Hesap, kalıcı ekonomi ve klan sistemi bu demoda yoktur.
+
+### Render için hazır kurulum
+
+Repo kökünde `render.yaml` hazırdır. Render'da bu repodan **Web Service** oluştur:
+
+- Runtime: Node
+- Build: `npm ci`
+- Start: `npm start`
+- Plan: Free
+- Health check: `/health`
+
+Yayınlanan Render adresi oyunu ve sunucuyu birlikte açar. Sunucu yayımlandıktan sonra GitHub Pages'i de kullanmak için `network-config.js` içindeki boş adresi `wss://YAYINLANAN-ADRES/ws` ile değiştir.
+
+Ücretsiz Render sunucusu boşta kaldığında uyur; ilk açılış zaman alabilir. Kalıcı üretim sunucusu değildir. Henüz bir Render hesabına bağlanıp bulutta yayımlanmadı.
+
+## GitHub Pages sürümü
+
+`network-config.js` adresi boşken mevcut PeerJS bağlantısı kullanılır: ilk oyuncunun cihazı dünyayı yönetir. Host ayrılırsa bağlantı kesilir. Bu modun ikinci bulut tarayıcısıyla bağlantı testi zaman aşımına uğradı; farklı ağlarda çalıştığı doğrulanmadı. Sunuculu sürümün yerine güvenilir kabul edilmemelidir.
+
+## Doğrulama
+
+`npm test` gerçek yerel WebSocket bağlantılarıyla şunları kontrol eder:
+
+- İki istemcinin aynı dünya ve hareketi alması.
+- Gerçek oyun istemcisi kodunun sunucuya katılması ve ortak hasarı alması.
+- Ateş açısı, salvo, yeniden dolum, hasar ve nick korunarak yeniden doğma.
+- Sekiz oyuncu sınırı ve ayrılan oyuncunun kaldırılması.
+
+iPhone Safari ve internette iki ayrı cihaz doğrulaması, sunucu yayını sonrasında yapılmalıdır.
+
+PeerJS 1.5.5 MIT lisansıyla HTML içinde bulunur; lisans `PEERJS-LICENSE.txt` dosyasındadır. Sunuculu mod WebRTC/TURN kullanmaz.

@@ -14,5 +14,7 @@ test('cookie restores nickname and score even when local storage token is missin
  for(const body of ['{}',JSON.stringify({token:'b'.repeat(64)})]){const response=await fetch(base+'/session',{method:'POST',headers:{Cookie:cookie},body}),saved=await response.json();assert.equal(saved.token,first.token);assert.equal(saved.profile.nick,'Sabit Kaptan');assert.equal(saved.profile.score,250);assert.equal(saved.profile.bank,12)}
  const second=await fetch(base+'/session',{method:'POST',body:'{}'});assert.equal((await second.json()).profile,null);
  const blocked=await fetch(base+'/session',{method:'POST',headers:{Origin:'https://other.example'},body:'{}'});assert.equal(blocked.status,403);
+ const invalid=await fetch(base+'/session',{method:'POST',headers:{Origin:'null'},body:'{}'});assert.equal(invalid.status,403);
+ assert.equal((await fetch(base+'/health')).status,200);
  }finally{if(ws)ws.terminate();await game.close()}
 });

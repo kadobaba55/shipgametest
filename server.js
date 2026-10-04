@@ -55,7 +55,7 @@ function createGameServer(options={}){
  if(pathname==='/session'){
  res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json');
  if(req.method!=='POST'){res.writeHead(405);res.end('{}');return}
- const origin=req.headers.origin;if(origin&&new URL(origin).host!==req.headers.host){res.writeHead(403);res.end('{}');return}
+ const origin=req.headers.origin;let sameOrigin=!origin;try{if(origin)sameOrigin=new URL(origin).host===req.headers.host}catch{}if(!sameOrigin){res.writeHead(403);res.end('{}');return}
  let body='';try{for await(const chunk of req){body+=chunk;if(body.length>512){res.writeHead(413);res.end('{}');return}}
  const supplied=JSON.parse(body||'{}').token,token=cookieToken(req)||(validToken(supplied)?supplied:randomBytes(32).toString('hex'));
  const profile=await store.find(token);res.setHeader('Set-Cookie',sessionCookie(req,token));res.end(JSON.stringify({token,profile:profile?store.publicRow(profile):null}));

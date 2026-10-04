@@ -8,6 +8,9 @@ const types={skiff:{maxhp:800,speed:115,turn:180,capacity:80,reload:4.5},brig:{m
 const islands=[{x:-240,y:-110,r:55},{x:220,y:160,r:65},{x:340,y:-270,r:48},{x:-310,y:280,r:48}];
 const homePoints=[[-550,-500],[-550,0],[-550,500],[0,550],[550,500],[550,0],[550,-500],[0,-550]];
 const wrap=a=>Math.atan2(Math.sin(a),Math.cos(a));
+const validToken=t=>typeof t==='string'&&/^[a-f0-9]{64}$/.test(t);
+function cookieToken(req){const value=String(req.headers.cookie||'').split(';').map(s=>s.trim()).find(s=>s.startsWith('naval-captain-v2='))?.slice('naval-captain-v2='.length);return validToken(value)?value:null}
+function sessionCookie(req,token){return 'naval-captain-v2='+token+'; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax'+(req.socket.encrypted||req.headers['x-forwarded-proto']==='https'?'; Secure':'')}
 const cleanNick=s=>typeof s==='string'?s.replace(/[^\p{L}\p{N} _-]/gu,'').trim().slice(0,16):'';
 function createWorld(options={}){
  const ships=new Map(),inputs=new Map(),profiles=new Map();let shots=[],fx=[],loot=[],nextShot=0,nextFx=0,nextLoot=0,elapsed=0,resourceTimer=0;
@@ -48,7 +51,15 @@ function createWorld(options={}){
 function createGameServer(options={}){
  const store=createProfileStore(),world=createWorld({mark:store.mark,bots:options.bots}),clients=new Map();let leaderboard=[],ready=false;
  store.ready.then(()=>{ready=true;return store.top()}).then(rows=>leaderboard=rows).catch(()=>console.error('Database startup failed'));
- const server=http.createServer((req,res)=>{const pathname=new URL(req.url,'http://localhost').pathname;
+ const server=http.createServer(async (req,res)=>{const pathname=new URL(req.url,'http://localhost').pathname;
+ if(pathname==='/session'){
+ res.setHeader('Cache-Control','no-store');res.setHeader('Content-Type','application/json');
+ if(req.method!=='POST'){res.writeHead(405);res.end('{}');return}
+ const origin=req.headers.origin;if(origin&&new URL(origin).host!==req.headers.host){res.writeHead(403);res.end('{}');return}
+ let body='';try{for await(const chunk of req){body+=chunk;if(body.length>512){res.writeHead(413);res.end('{}');return}}
+ const supplied=JSON.parse(body||'{}').token,token=cookieToken(req)||(validToken(supplied)?supplied:randomBytes(32).toString('hex'));
+ const profile=await store.find(token);res.setHeader('Set-Cookie',sessionCookie(req,token));res.end(JSON.stringify({token,profile:profile?store.publicRow(profile):null}));
+ }catch{res.writeHead(503);res.end(JSON.stringify({error:'Oturum yüklenemedi'}))}return}
  if(pathname==='/health'){res.writeHead(ready?200:503,{'Content-Type':'application/json'});res.end(JSON.stringify({ok:ready,players:clients.size,persistentScores:store.persistent}));return}
  if(pathname==='/leaderboard'){res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-store'});res.end(JSON.stringify({persistent:store.persistent,rows:leaderboard}));return}
  if(pathname==='/network-config.js'){res.writeHead(200,{'Content-Type':'text/javascript','Cache-Control':'no-store'});res.end("window.NAVAL_SERVER_URL=(location.protocol==='https:'?'wss://':'ws://')+location.host+'/ws';");return}
@@ -56,7 +67,7 @@ function createGameServer(options={}){
  const wss=new WebSocketServer({server,path:'/ws',maxPayload:2048}),send=(ws,m)=>{if(ws.readyState===WebSocket.OPEN&&ws.bufferedAmount<65536)ws.send(JSON.stringify(m))};
  wss.on('connection',(ws,req)=>{let pid=null,joined=false,logging=false,alive=true,rateAt=Date.now(),messages=0;const helloTimeout=setTimeout(()=>{if(!joined)ws.close(1008,'Nickname required')},15000);ws.on('pong',()=>alive=true);ws.isAlive=()=>alive;ws.markDead=()=>alive=false;
  ws.on('message',async raw=>{const now=Date.now();if(now-rateAt>=1000){rateAt=now;messages=0}if(++messages>100){ws.close(1008,'Rate limit');return}let m;try{m=JSON.parse(raw)}catch{return}if(!m||typeof m!=='object')return;
- if(!joined){if(logging)return;if(m.type!=='hello'||m.version!==2||!cleanNick(m.nick)||!ready){ws.close(1008,'Invalid login');return}logging=true;const token=typeof m.token==='string'&&/^[a-f0-9]{64}$/.test(m.token)?m.token:randomBytes(32).toString('hex');try{const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'').split(',')[0].trim(),profile=await store.login(token,cleanNick(m.nick),ip);pid=profile.id;if(ws.readyState!==WebSocket.OPEN)return;if(clients.has(pid)){send(ws,{type:'error',message:'Bu kaptan başka sekmede açık.'});ws.close();return}if(!world.join(pid,profile.nick,m.kind,profile)){send(ws,{type:'full'});ws.close();return}joined=true;clearTimeout(helloTimeout);clients.set(pid,ws);send(ws,{type:'welcome',pid,token,nick:profile.nick});send(ws,{type:'board',rows:leaderboard,persistent:store.persistent,profile:store.publicRow(profile)});send(ws,world.snapshot())}catch(e){send(ws,{type:'error',message:e.message==='nick_taken'?'Bu nick alınmış. Başka bir nick seç.':'Kayıt servisi şu an kullanılamıyor.'});ws.close()}return}
+ if(!joined){if(logging)return;if(m.type!=='hello'||m.version!==2||!cleanNick(m.nick)||!ready){ws.close(1008,'Invalid login');return}logging=true;const token=cookieToken(req)||(validToken(m.token)?m.token:randomBytes(32).toString('hex'));try{const ip=String(req.headers['x-forwarded-for']||req.socket.remoteAddress||'').split(',')[0].trim(),profile=await store.login(token,cleanNick(m.nick),ip);pid=profile.id;if(ws.readyState!==WebSocket.OPEN)return;if(clients.has(pid)){send(ws,{type:'error',message:'Bu kaptan başka sekmede açık.'});ws.close();return}if(!world.join(pid,profile.nick,m.kind,profile)){send(ws,{type:'full'});ws.close();return}joined=true;clearTimeout(helloTimeout);clients.set(pid,ws);send(ws,{type:'welcome',pid,token,nick:profile.nick});send(ws,{type:'board',rows:leaderboard,persistent:store.persistent,profile:store.publicRow(profile)});send(ws,world.snapshot())}catch(e){send(ws,{type:'error',message:e.message==='nick_taken'?'Bu nick alınmış. Başka bir nick seç.':'Kayıt servisi şu an kullanılamıyor.'});ws.close()}return}
  if(m.type==='ping'&&Number.isSafeInteger(m.id)){send(ws,{type:'pong',id:m.id});return}if(m.type==='board'){send(ws,{type:'board',rows:leaderboard,persistent:store.persistent,profile:store.publicRow(world.profiles.get(pid))});return}
  const accepted=world.message(pid,m,now);if(m.type==='action'&&m.action==='fire'&&Number.isSafeInteger(m.salvo))send(ws,{type:'fireResult',salvo:m.salvo,accepted:accepted===true});
  });ws.on('error',()=>{});ws.on('close',()=>{clearTimeout(helloTimeout);if(joined&&clients.get(pid)===ws){clients.delete(pid);world.leave(pid);store.flush()}})});

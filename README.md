@@ -79,3 +79,9 @@ Render Environment içinde `DATABASE_URL` PostgreSQL bağlantısı olmalıdır; 
 Tarayıcıdaki rastgele 256 bit anahtar oyuncuyu tanır. IP yalnızca tuzlu özet olarak son bağlantı kaydıdır; aynı Wi-Fi kullanıcılarını birleştirmez. Anahtar herkese açık API'ye veya skor tablosuna çıkmaz. Tarayıcı verisini silmek ya da başka cihaz kullanmak yeni profil oluşturur; cihazlar arası hesap kurtarma henüz yoktur. İlk kayıt nicki kalıcıdır.
 
 Sözdizimi ve canlı servis sağlığı kontrol edilir. Telefon oynanışı, çoklu dokunma ve denge testleri kullanıcıya bırakılır.
+
+
+## ONLINE 09 — kaptan oturumu
+Sunucu tarafından verilen bir yıllık HttpOnly/SameSite çerezi ve yerel anahtar yedeği aynı kaptanı geri getirir. Açılışta /session kayıtlı nicki ve profili yükler; kayıtlı nick tekrar istenmez. Oturum servisi erişilemiyorsa yeni kimlik açılmaz. Safari ve uygulama içi tarayıcı ayrı çerez depolarına sahip olabilir; tarayıcı verisini silmek veya farklı cihaz kullanmak yeni kimlik oluşturur. IP kimlik doğrulaması için kullanılmaz.
+
+5 Ekim 2026 kullanıcı isteğiyle eski demo kayıtları bir kez sıfırlanır. Migration işareti tekrar dağıtımlarda yeni kayıtların sıfırlanmasını önler. Önceki tablo sunucuda naval_profiles_before_reset_20261005 olarak kurtarma kopyasıdır; oyun ve genel tablo bu kayıtlara erişmez.

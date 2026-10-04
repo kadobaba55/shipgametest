@@ -83,6 +83,7 @@ function createGameServer(){
       let m;try{m=JSON.parse(raw)}catch{return}
       if(!m||typeof m!=='object')return;
       if(!joined){if(m.type!=='hello'||m.version!==2||!cleanNick(m.nick)){ws.close(1008,'Invalid nickname');return}if(!world.join(pid,m.nick)){send(ws,{type:'full'});ws.close(1008,'Sea full');return}joined=true;clearTimeout(helloTimeout);clients.set(pid,ws);send(ws,{type:'welcome',pid});send(ws,world.snapshot());return}
+      if(m.type==='ping'&&Number.isSafeInteger(m.id)){send(ws,{type:'pong',id:m.id});return}
       world.message(pid,m,now);
     });
     ws.on('error',()=>{});ws.on('close',()=>{clearTimeout(helloTimeout);clients.delete(pid);world.leave(pid)});

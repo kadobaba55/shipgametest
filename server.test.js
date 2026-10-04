@@ -27,6 +27,7 @@ test('two actual WebSocket clients share state; limit is eight; disconnect remov
   async function until(fn){const end=Date.now()+3000;while(!fn()){if(Date.now()>end)throw Error('Timed out');await new Promise(r=>setTimeout(r,10))}}
   const a=await connect('Bir'),b=await connect('İki');
   await until(()=>a.data.some(m=>m.ships?.length===2)&&b.data.some(m=>m.ships?.length===2));
+  a.ws.send(JSON.stringify({type:'ping',id:7}));await until(()=>a.data.some(m=>m.type==='pong'&&m.id===7));
   const id=a.data.find(m=>m.type==='welcome').pid;
   Object.assign(game.world.ships.get(id),{x:0,y:0,a:0});
   a.ws.send(JSON.stringify({type:'input',x:1,y:0}));await until(()=>game.world.ships.get(id).x>2);

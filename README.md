@@ -61,3 +61,21 @@ PeerJS 1.5.5 MIT lisansıyla HTML içinde bulunur; lisans `PEERJS-LICENSE.txt` d
 ## Online 03 — akıcı çizim
 
 Kendi gemisi yerel hareket tahmini kullanır; sunucu düzeltmeleri yumuşatılır. Diğer gemiler ve kimlikli mermiler 100 ms tamponla kareler arasında çizilir. Hasar ve hareket otoritesi sunucuda kalır. Sunucu veri gönderimi 20 Hz; ekran çizimi cihazın requestAnimationFrame hızında çalışır. Bu sürümün oynanış testi kullanıcıya bırakıldı; sabit 60 FPS veya hatasız hareket henüz doğrulanmadı.
+
+## ONLINE 08 — genişletilmiş demo
+
+- Çevik ve Zırhlı gemi seçimi; sağ analog yön ve menzil, sol analog hareket.
+- Gerçek oyuncu azsa toplam dört gemiye tamamlayan açıkça etiketlenmiş botlar. Sekiz gerçek oyuncuya kadar otomatik yer açılır.
+- Denizde tahta/sandık ganimeti; batınca gemi yükünün %50'si düşer, bankadaki kaynak korunur.
+- Her bağlı oyuncunun ana adası ve 105 birim boşaltma alanı. Aktarım kapasite / 30 hızında; alandan çıkınca durur.
+- Beş dakikalık ortak maç, 10 saniyelik sonuç ekranı, otomatik yeni tur. Batırma 100, teslim edilen kaynak 5 puan.
+- Genel skor, nick, toplam batırma, banka, galibiyet ve maç sayısı sunucuda tutulur. Botlar genel tabloya girmez.
+- Sentezlenen sesler, duman, parçalar ve darbe sarsıntısı. İlk dokunma sesi etkinleştirir.
+
+### Kalıcı kayıt
+
+Render Environment içinde `DATABASE_URL` PostgreSQL bağlantısı olmalıdır; bağlantı yalnızca sunucuda kullanılır. Nick ve skorlar Postgres'te korunur; bağlantı olmadan yalnızca oturum tablosu vardır. Ücretsiz Render Postgres 30 gün sonra sona erer; demo süresi sonrası kayıtların taşınması ya da planın değiştirilmesi gerekir.
+
+Tarayıcıdaki rastgele 256 bit anahtar oyuncuyu tanır. IP yalnızca tuzlu özet olarak son bağlantı kaydıdır; aynı Wi-Fi kullanıcılarını birleştirmez. Anahtar herkese açık API'ye veya skor tablosuna çıkmaz. Tarayıcı verisini silmek ya da başka cihaz kullanmak yeni profil oluşturur; cihazlar arası hesap kurtarma henüz yoktur. İlk kayıt nicki kalıcıdır.
+
+Sözdizimi ve canlı servis sağlığı kontrol edilir. Telefon oynanışı, çoklu dokunma ve denge testleri kullanıcıya bırakılır.

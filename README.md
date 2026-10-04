@@ -57,3 +57,7 @@ Yayınlanan Render adresi oyunu ve sunucuyu birlikte açar. Sunucu yayımlandık
 iPhone Safari ve internette iki ayrı cihaz doğrulaması, sunucu yayını sonrasında yapılmalıdır.
 
 PeerJS 1.5.5 MIT lisansıyla HTML içinde bulunur; lisans `PEERJS-LICENSE.txt` dosyasındadır. Sunuculu mod WebRTC/TURN kullanmaz.
+
+## Online 03 — akıcı çizim
+
+Kendi gemisi yerel hareket tahmini kullanır; sunucu düzeltmeleri yumuşatılır. Diğer gemiler ve kimlikli mermiler 100 ms tamponla kareler arasında çizilir. Hasar ve hareket otoritesi sunucuda kalır. Sunucu veri gönderimi 20 Hz; ekran çizimi cihazın requestAnimationFrame hızında çalışır. Bu sürümün oynanış testi kullanıcıya bırakıldı; sabit 60 FPS veya hatasız hareket henüz doğrulanmadı.

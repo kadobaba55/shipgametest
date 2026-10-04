@@ -10,7 +10,7 @@ const islands = [{x:-240,y:-110,r:55},{x:220,y:160,r:65},{x:340,y:-270,r:48},{x:
 const wrap = a => Math.atan2(Math.sin(a),Math.cos(a));
 const cleanNick = s => typeof s==='string' ? s.replace(/[^\p{L}\p{N} _-]/gu,'').trim().slice(0,16) : '';
 function createWorld(){
-  const ships=new Map(), inputs=new Map(); let shots=[],fx=[];
+  const ships=new Map(), inputs=new Map(); let shots=[],fx=[],nextShot=0;
   function spawn(pid,nick){
     let x,y,a;
     for(let i=0;i<100;i++){
@@ -25,7 +25,7 @@ function createWorld(){
     if(s.dead||!Number.isFinite(a))return;
     a=wrap(a);const d=wrap(a-s.a);if(Math.abs(d)<Math.PI/4||Math.abs(d)>Math.PI*.75)return;
     const side=d>0?'r':'l';if(s[side]>0)return;s[side]=cfg.reload;
-    for(let i=-1;i<=1;i++){const q=a+i*.055;shots.push({x:s.x+Math.cos(q)*26,y:s.y+Math.sin(q)*26,dx:Math.cos(q),dy:Math.sin(q),travel:0,owner:s.pid})}
+    for(let i=-1;i<=1;i++){const q=a+i*.055;shots.push({id:++nextShot,x:s.x+Math.cos(q)*26,y:s.y+Math.sin(q)*26,dx:Math.cos(q),dy:Math.sin(q),travel:0,owner:s.pid})}
     fx.push({x:s.x+Math.cos(a)*28,y:s.y+Math.sin(a)*28,life:.22,max:.22,type:'flash'});
   }
   function message(pid,m,now=Date.now()){
